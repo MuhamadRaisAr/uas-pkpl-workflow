@@ -1,43 +1,60 @@
+# main.yml
+
+# Nama pipeline Anda.
 name: CI/CD Pipeline for PKPL Final Exam
 
+# Trigger pipeline saat ada push ke branch 'main'.
 on:
   push:
     branches: [ "main" ]
 
+# Definisi job dalam pipeline.
 jobs:
   build-and-push:
+    # Menentukan runner yang akan menjalankan job ini.
+    # Pastikan ini adalah nama runner yang benar di Gitea Anda (misalnya 'ubuntu-latest', 'self-hosted').
     runs-on: ubuntu-latest
+
+    # Langkah-langkah yang akan dieksekusi dalam job ini.
     steps:
       - name: Checkout repository
+        # Mengambil kode dari repository Git Aztech Anda.
         uses: actions/checkout@v4
 
       - name: Set up Python
+        # Mengatur lingkungan Python versi 3.9 di runner.
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
       - name: Install dependencies
+        # Menginstal dependensi Python dari file requirements.txt.
         run: pip install -r requirements.txt
 
       - name: Run Unit Tests
+        # Menjalankan unit tests proyek Anda menggunakan pytest.
         run: pytest
 
       - name: Log in to Docker Hub
+        # Langkah krusial untuk autentikasi ke Docker Hub.
+        # Menggunakan secrets yang telah Anda simpan di Gitea.
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Menggunakan secret untuk username Docker Hub.
+          password: ${{ secrets.DOCKERHUB_TOKEN }}   # Menggunakan secret untuk Personal Access Token Docker Hub.
 
       - name: Build and push Docker image
+        # Langkah untuk membangun dan mendorong image Docker ke Docker Hub.
+        # Menggunakan action resmi docker/build-push-action.
         uses: docker/build-push-action@v5
         with:
-          context: .
-          push: true
-          # --- PASTIKAN BAGIAN INI ADA DAN BENAR ---
+          context: . # Konteks build adalah direktori saat ini (root proyek).
+          push: true # Mengaktifkan push image ke Docker Hub.
+          # Menentukan tag-tag yang akan diterapkan pada image Docker.
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:${{ github.run_id }}
-          # ----------------------------------------
+            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:latest # Tag 'latest' untuk versi terbaru.
+            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:${{ github.run_id }} # Tag unik berdasarkan ID run pipeline.
 
       - name: Complete job
+        # Langkah terakhir yang mencetak pesan keberhasilan ke log pipeline.
         run: echo "CI/CD Pipeline finished successfully!"
