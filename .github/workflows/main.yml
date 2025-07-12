@@ -1,58 +1,43 @@
-# main.yml
-
-# Nama pipeline Anda
 name: CI/CD Pipeline for PKPL Final Exam
 
-# Trigger pipeline saat ada push ke branch 'main'
 on:
   push:
     branches: [ "main" ]
 
-# Definisi job dalam pipeline
 jobs:
   build-and-push:
-    # Menentukan runner yang akan menjalankan job ini
-    runs-on: ubuntu-latest # Pastikan ini adalah nama runner yang benar di Gitea Anda
-
-    # Langkah-langkah dalam job
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        # Mengambil kode dari repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        # Mengatur lingkungan Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
       - name: Install dependencies
-        # Menginstal dependensi dari requirements.txt
         run: pip install -r requirements.txt
 
       - name: Run Unit Tests
-        # Menjalankan unit tests
         run: pytest
 
       - name: Log in to Docker Hub
-        # Langkah untuk login ke Docker Hub menggunakan secrets yang telah disimpan
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }} # Menggunakan secret untuk username Docker Hub
-          password: ${{ secrets.DOCKERHUB_TOKEN }}   # Menggunakan secret untuk Personal Access Token Docker Hub
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
-        # Langkah untuk membangun dan mendorong image Docker
         uses: docker/build-push-action@v5
         with:
-          context: . # Konteks build adalah direktori saat ini
-          push: true # Mengaktifkan push ke registry Docker Hub
-          # --- PERBAIKAN DI SINI: MENAMBAHKAN DUA TAG UNTUK IMAGE ---
+          context: .
+          push: true
+          # --- PASTIKAN BAGIAN INI ADA DAN BENAR ---
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:latest # Tag 'latest'
-            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:${{ github.run_id }} # Tag unik berdasarkan ID run pipeline
-          # ----------------------------------------------------------
+            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/uas-pkpl-repo:${{ github.run_id }}
+          # ----------------------------------------
 
       - name: Complete job
-        # Langkah terakhir untuk menandai job selesai
         run: echo "CI/CD Pipeline finished successfully!"
